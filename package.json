@@ -18,8 +18,13 @@
   },
   "homepage": "https://github.com/paulabaal12/PROY1-REDES#readme",
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.60.0",
+    "anthropic": "^0.0.0",
+    "axios": "^1.11.0",
     "cors": "^2.8.5",
     "csv-parser": "^3.2.0",
-    "express": "^5.1.0"
+    "dotenv": "^17.2.1",
+    "express": "^5.1.0",
+    "openai": "^5.16.0"
   }
 }
