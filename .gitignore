@@ -5,4 +5,7 @@ node_modules/
 *.log
 # VSCode
 .vscode/
-data/combined_data.json
+data/CSV/
+src/data/combined_data.json
+*.log
+src/chatbot_log.json
