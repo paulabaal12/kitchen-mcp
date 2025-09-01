@@ -1,0 +1,25 @@
+{
+  "name": "proy1-redes",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/paulabaal12/PROY1-REDES.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/paulabaal12/PROY1-REDES/issues"
+  },
+  "homepage": "https://github.com/paulabaal12/PROY1-REDES#readme",
+  "dependencies": {
+    "cors": "^2.8.5",
+    "csv-parser": "^3.2.0",
+    "express": "^5.1.0"
+  }
+}
