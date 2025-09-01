@@ -1,52 +1,67 @@
+
 # PROY1-REDES
 
-## MCP Local Server Specification
+## Project Overview
 
-**Endpoint:**  
-`POST http://localhost:4000/jsonrpc`
+Food & Nutrition Chatbot with MCP integration. This project implements a console chatbot that connects to a local API and MCP server to provide food, nutrition, ingredient information, and recipe suggestions. It also integrates with Anthropic Claude for general questions.
 
-**Supported Methods:**
+### Features
+- Query foods and nutrition data from local CSVs (combined to JSON)
+- Suggest recipes based on protein/fat
+- List unique ingredients
+- Log all interactions
+- Connect to Anthropic Claude (LLM)
+- MCP server (JSON-RPC) for food/nutrition queries
 
-- `getFoods`
-	- **Description:** Returns all foods.
-	- **Params:** none
-	- **Example request:**
-		```json
-		{ "jsonrpc": "2.0", "id": 1, "method": "getFoods", "params": {} }
-		```
+---
 
-- `getFoodByName`
-	- **Description:** Returns a food by exact name.
-	- **Params:**
-		- `name` (string)
-	- **Example request:**
-		```json
-		{ "jsonrpc": "2.0", "id": 2, "method": "getFoodByName", "params": { "name": "almond butter" } }
-		```
+## Folder Structure
 
-- `searchFoods`
-	- **Description:** Search foods by protein, fat, and calories.
-	- **Params:**
-		- `minProtein` (number, optional)
-		- `maxFat` (number, optional)
-		- `maxCalories` (number, optional)
-	- **Example request:**
-		```json
-		{ "jsonrpc": "2.0", "id": 3, "method": "searchFoods", "params": { "minProtein": 5, "maxFat": 10 } }
-		```
+```
+PROY1-REDES/
+│
+├── src/
+│   ├── index.js                # API backend principal
+│   ├── foods_api.js            # Endpoints de alimentos, ingredientes, recetas
+│   ├── process_all_csvs.js     # Script para combinar CSVs en JSON
+│   ├── chatbot.mjs             # Chatbot en consola con Anthropic/Claude
+│   ├── mcp_server.js           # Servidor MCP local (JSON-RPC)
+│
+├── data/
+│   └── CSV/                    # CSVs originales (no rastreados por Git)
+│
+├── .gitignore                  # Ignorar archivos grandes, logs, JSON generados
+├── package.json                # Configuración de dependencias Node.js
+├── requirements.txt            # (si usas Python para algún script)
+├── README.md                   # Documentación principal
+```
 
-- `getIngredients`
-	- **Description:** Returns a list of unique ingredients.
-	- **Params:** none
-	- **Example request:**
-		```json
-		{ "jsonrpc": "2.0", "id": 4, "method": "getIngredients", "params": {} }
-		```
+---
 
-- `getRecipeSuggestions`
-	- **Description:** Returns recipe suggestions (top protein, low fat).
-	- **Params:** none
-	- **Example request:**
-		```json
-		{ "jsonrpc": "2.0", "id": 5, "method": "getRecipeSuggestions", "params": {} }
-		```
+## Usage Flow & Main Commands
+
+### 1. Combine CSVs to JSON
+```powershell
+node src/process_all_csvs.js
+```
+Generates a combined JSON from all CSVs in `data/CSV/`. (Not tracked by Git)
+
+### 2. Start the API Backend
+```powershell
+node src/index.js
+```
+Runs the Express API on port 3001.
+
+### 3. Start the MCP Server
+```powershell
+node src/mcp_server.js
+```
+Runs the MCP server (JSON-RPC) on port 4000.
+
+### 4. Run the Console Chatbot
+```powershell
+node src/chatbot.mjs
+```
+Interact with the chatbot, query foods, ingredients, recipes, and ask Claude.
+
+---
