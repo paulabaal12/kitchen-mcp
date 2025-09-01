@@ -8,8 +8,9 @@ const PORT = process.env.PORT || 3001;
 app.use(cors());
 app.use(express.json());
 
-// Example route
-data = require('./data/recipes.json'); // Placeholder, will create this file soon
+
+// Cargar datos combinados desde el JSON generado por process_all_csvs.js
+const data = require('./data/combined_data.json');
 
 app.get('/', (req, res) => {
   res.send('API is running!');
