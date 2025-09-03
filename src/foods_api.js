@@ -1,51 +1,46 @@
 // Lee el archivo FOOD-DATA-GROUP5.csv y expone endpoints para alimentos y nutrición
 const express = require('express');
-const csv = require('csv-parser');
+
 const fs = require('fs');
 const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-const csvDir = path.join(__dirname, '../data/CSV');
-const groupFiles = [
-  'FOOD-DATA-GROUP1.csv',
-  'FOOD-DATA-GROUP2.csv',
-  'FOOD-DATA-GROUP3.csv',
-  'FOOD-DATA-GROUP4.csv',
-  'FOOD-DATA-GROUP5.csv',
-];
-let foods = [];
 
-// Cargar y combinar los datos de todos los archivos GROUP
+// Leer los datos desde los archivos JSON unificados
+const dataDir = path.join(__dirname, 'data');
+const ingredientesPath = path.join(dataDir, 'ingredientes_unificados.json');
+const recetasPath = path.join(dataDir, 'recetas_unificadas.json');
+
+let foods = [];
+let recetas = [];
+
 function loadFoods() {
   return new Promise((resolve, reject) => {
-    let allFoods = [];
-    let filesProcessed = 0;
-    groupFiles.forEach(file => {
-      const filePath = path.join(csvDir, file);
-      const results = [];
-      fs.createReadStream(filePath)
-        .pipe(csv())
-        .on('data', (data) => results.push(data))
-        .on('end', () => {
-          allFoods = allFoods.concat(results);
-          filesProcessed++;
-          if (filesProcessed === groupFiles.length) {
-            foods = allFoods;
-            resolve();
-          }
-        })
-        .on('error', reject);
-    });
+    try {
+      if (fs.existsSync(ingredientesPath)) {
+        foods = JSON.parse(fs.readFileSync(ingredientesPath, 'utf-8'));
+      }
+      if (fs.existsSync(recetasPath)) {
+        recetas = JSON.parse(fs.readFileSync(recetasPath, 'utf-8'));
+      }
+      resolve();
+    } catch (err) {
+      reject(err);
+    }
   });
 }
 
 
 // Endpoint: obtener todos los alimentos
+
+// Endpoint: obtener todos los alimentos
 app.get('/foods', (req, res) => {
   res.json(foods);
 });
+
+// Endpoint: buscar alimento por nombre (case-insensitive)
 
 // Endpoint: buscar alimento por nombre (case-insensitive)
 app.get('/foods/:name', (req, res) => {
@@ -59,19 +54,23 @@ app.get('/foods/:name', (req, res) => {
 });
 
 // Endpoint: búsqueda avanzada por query params (ej: ?minProtein=5&maxFat=10)
+
+// Endpoint: búsqueda avanzada por query params (ej: ?minProtein=5&maxFat=10)
 app.get('/foods/search', (req, res) => {
   let results = foods;
   if (req.query.minProtein) {
-    results = results.filter(f => parseFloat(f.Protein) >= parseFloat(req.query.minProtein));
+    results = results.filter(f => parseFloat(f.protein_g) >= parseFloat(req.query.minProtein));
   }
   if (req.query.maxFat) {
-    results = results.filter(f => parseFloat(f.Fat) <= parseFloat(req.query.maxFat));
+    results = results.filter(f => parseFloat(f.fat) <= parseFloat(req.query.maxFat));
   }
   if (req.query.maxCalories) {
-    results = results.filter(f => parseFloat(f['Caloric Value']) <= parseFloat(req.query.maxCalories));
+    results = results.filter(f => parseFloat(f.energy_kcal) <= parseFloat(req.query.maxCalories));
   }
   res.json(results);
 });
+
+// Endpoint: listar ingredientes únicos (usando la columna 'food')
 
 // Endpoint: listar ingredientes únicos (usando la columna 'food')
 app.get('/ingredients', (req, res) => {
@@ -80,15 +79,31 @@ app.get('/ingredients', (req, res) => {
 });
 
 // Endpoint: sugerencias de recetas simples (alimentos con más proteína y menos grasa)
+
+// Endpoint: sugerencias de recetas simples (top 5 recetas con más proteína y menos grasa)
 app.get('/recipes/suggestions', (req, res) => {
-  // Sugerir top 5 alimentos con mayor proteína y menor grasa
-  const sorted = foods
-    .filter(f => f.Protein && f.Fat)
-    .sort((a, b) => parseFloat(b.Protein) - parseFloat(a.Protein) || parseFloat(a.Fat) - parseFloat(b.Fat));
-  res.json(sorted.slice(0, 5));
+  if (recetas.length > 0) {
+    // Si hay recetas, sugerir top 5 por proteína (si existe el campo) y menor grasa
+    const sorted = recetas
+      .filter(r => r.protein_g && r.fat)
+      .sort((a, b) => parseFloat(b.protein_g) - parseFloat(a.protein_g) || parseFloat(a.fat) - parseFloat(b.fat));
+    res.json(sorted.slice(0, 5));
+  } else {
+    // Si no hay recetas, sugerir alimentos
+    const sorted = foods
+      .filter(f => f.protein_g && f.fat)
+      .sort((a, b) => parseFloat(b.protein_g) - parseFloat(a.protein_g) || parseFloat(a.fat) - parseFloat(b.fat));
+    res.json(sorted.slice(0, 5));
+  }
+});
+
+// Endpoint: obtener todas las recetas
+app.get('/recipes', (req, res) => {
+  res.json(recetas);
 });
 
 // Iniciar el servidor después de cargar los datos
+
 loadFoods().then(() => {
   app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`);
