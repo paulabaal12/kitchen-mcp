@@ -25,28 +25,40 @@ function logInteraction(question, answer) {
 }
 
 function showMenu() {
-  console.log('\n=== Food & Nutrition Chatbot ===');
-  console.log('1. Buscar alimento por nombre');
-  console.log('2. Buscar alimentos por proteína/grasa/calorías');
-  console.log('3. Ver sugerencias de recetas');
-  console.log('4. Listar ingredientes únicos');
+  console.log('\n=== Food & Nutrition Chatbot (MCP) ===');
+  console.log('1. Buscar alimento por nombre (MCP)');
+  console.log('2. Buscar alimentos por proteína/grasa/calorías (MCP)');
+  console.log('3. Sugerencias de recetas (MCP)');
+  console.log('4. Listar ingredientes únicos (MCP)');
   console.log('5. Ver log de interacciones');
   console.log('6. Preguntar a Claude (Anthropic)');
   console.log('7. Salir');
+}
+
+const MCP_URL = 'http://localhost:4000/jsonrpc';
+
+async function callMCP(method, params = {}) {
+  try {
+    const res = await axios.post(MCP_URL, {
+      jsonrpc: '2.0',
+      method,
+      params,
+      id: Date.now()
+    });
+    return res.data.result;
+  } catch (err) {
+    return `Error MCP: ${err.message || err}`;
+  }
 }
 
 async function handleOption(option) {
   switch(option) {
     case '1':
       rl.question('Nombre del alimento: ', async (name) => {
-        try {
-          const res = await axios.get(`${API_URL}/foods/${encodeURIComponent(name)}`);
-          console.log(res.data);
-          logInteraction(`Buscar alimento: ${name}`, res.data);
-        } catch (err) {
-          console.log('No se encontró el alimento.');
-          logInteraction(`Buscar alimento: ${name}`, 'No se encontró el alimento.');
-        }
+        const result = await callMCP('getFoodByName', { name });
+        console.log('Resultado (MCP):');
+        console.log(result);
+        logInteraction(`MCP: getFoodByName ${name}`, result);
         promptUser();
       });
       break;
@@ -54,46 +66,33 @@ async function handleOption(option) {
       rl.question('Mínimo de proteína: ', (minProtein) => {
         rl.question('Máximo de grasa: ', (maxFat) => {
           rl.question('Máximo de calorías: ', async (maxCalories) => {
-            try {
-              const res = await axios.get(`${API_URL}/foods/search`, {
-                params: { minProtein, maxFat, maxCalories }
-              });
-              console.log(res.data);
-              logInteraction(`Buscar alimentos: minProtein=${minProtein}, maxFat=${maxFat}, maxCalories=${maxCalories}`, res.data);
-            } catch (err) {
-              console.log('Error en la búsqueda.');
-              logInteraction(`Buscar alimentos: minProtein=${minProtein}, maxFat=${maxFat}, maxCalories=${maxCalories}`, 'Error en la búsqueda.');
-            }
+            const params = { minProtein, maxFat, maxCalories };
+            const result = await callMCP('searchFoods', params);
+            console.log('Resultados (MCP):');
+            console.log(result);
+            logInteraction(`MCP: searchFoods minProtein=${minProtein}, maxFat=${maxFat}, maxCalories=${maxCalories}`, result);
             promptUser();
           });
         });
       });
       break;
-    case '3':
-      try {
-        const res = await axios.get(`${API_URL}/recipes/suggestions`);
-        console.log('Sugerencias de recetas (top proteína, baja grasa):');
-        console.log(res.data);
-        logInteraction('Sugerencias de recetas', res.data);
-      } catch (err) {
-        console.log('Error obteniendo sugerencias.');
-        logInteraction('Sugerencias de recetas', 'Error obteniendo sugerencias.');
-      }
+    case '3': {
+      const result = await callMCP('getRecipeSuggestions');
+      console.log('Sugerencias de recetas (MCP):');
+      console.log(result);
+      logInteraction('MCP: getRecipeSuggestions', result);
       promptUser();
       break;
-    case '4':
-      try {
-        const res = await axios.get(`${API_URL}/ingredients`);
-        console.log('Ingredientes únicos:');
-        console.log(res.data);
-        logInteraction('Listar ingredientes únicos', res.data);
-      } catch (err) {
-        console.log('Error obteniendo ingredientes.');
-        logInteraction('Listar ingredientes únicos', 'Error obteniendo ingredientes.');
-      }
+    }
+    case '4': {
+      const result = await callMCP('getIngredients');
+      console.log('Ingredientes únicos (MCP):');
+      console.log(result);
+      logInteraction('MCP: getIngredients', result);
       promptUser();
       break;
-    case '5':
+    }
+  case '5':
       if (fs.existsSync(LOG_FILE)) {
         const log = JSON.parse(fs.readFileSync(LOG_FILE));
         console.log('=== Log de interacciones ===');
@@ -107,7 +106,7 @@ async function handleOption(option) {
       }
       promptUser();
       break;
-    case '6':
+  case '6':
       rl.question('Pregunta para Claude: ', async (question) => {
         try {
           const response = await anthropic.messages.create({

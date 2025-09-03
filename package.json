@@ -1,9 +1,10 @@
 {
-  "name": "proy1-redes",
+  "name": "mcp-remote-server",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "Remote MCP server for food/nutrition chatbot (deployable to Cloud Run)",
+  "main": "mcp_server.js",
   "scripts": {
+    "start": "node mcp_server.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -21,6 +22,7 @@
     "@anthropic-ai/sdk": "^0.60.0",
     "anthropic": "^0.0.0",
     "axios": "^1.11.0",
+    "body-parser": "^1.20.2",
     "cors": "^2.8.5",
     "csv-parser": "^3.2.0",
     "dotenv": "^17.2.1",

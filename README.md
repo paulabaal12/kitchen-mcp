@@ -1,4 +1,3 @@
-
 # PROY1-REDES
 
 ## Project Overview
@@ -63,5 +62,30 @@ Runs the MCP server (JSON-RPC) on port 4000.
 node src/chatbot.mjs
 ```
 Interact with the chatbot, query foods, ingredients, recipes, and ask Claude.
+
+---
+
+## Deploying the MCP Server Remotely (Google Cloud Run)
+
+You can deploy your MCP server to the cloud for remote access (required for the project).
+
+### 1. Prepare the files
+- Ensure you have `mcp_server.js`, `package.json`, `Dockerfile`, and your `data/ingredientes_unificados.json` and `data/recetas_unificadas.json` in the same folder.
+
+### 2. Deploy to Google Cloud Run
+- Follow the official [Cloud Run quickstart](https://cloud.google.com/run/docs/quickstarts/build-and-deploy) or use the [Anthropic MCP Cloud Run tutorial](https://cloud.google.com/blog/topics/developers-practitioners/build-and-deploy-a-remote-mcp-server-to-google-cloud-run-in-under-10-minutes).
+- The Dockerfile is already provided for you.
+- The default port for Cloud Run is 8080 (already set in your code).
+
+### 3. Example: Test your remote MCP server
+After deployment, your endpoint will look like:
+```
+POST https://<your-cloud-run-url>/jsonrpc
+Body: { "jsonrpc": "2.0", "method": "getIngredients", "params": {}, "id": 1 }
+```
+
+### 4. Integrate remote MCP in your chatbot
+- In your chatbot, add an option to query the remote MCP server by changing the URL to your Cloud Run endpoint.
+- Example scenario: Ask for the current time, a greeting, or any food/recipe info from the remote server.
 
 ---
