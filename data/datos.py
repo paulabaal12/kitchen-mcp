@@ -135,3 +135,27 @@ if not recetas_df.empty:
     print("Archivo recetas_unificadas.csv creado.")
 else:
     print("No se encontraron datos de recetas.")
+
+# --- Conversión a JSON ---
+import json
+
+def csv_to_json(csv_path, json_path):
+    df = pd.read_csv(csv_path)
+    df.to_json(json_path, orient='records', force_ascii=False, indent=2)
+    print(f"Archivo {json_path} creado.")
+
+if __name__ == "__main__":
+    base_dir = os.path.dirname(__file__)
+    ingredientes_csv = os.path.join(csv_folder, 'ingredientes_unificados.csv')
+    recetas_csv = os.path.join(csv_folder, 'recetas_unificadas.csv')
+
+    # Nueva carpeta destino para los JSON
+    json_dest_folder = os.path.abspath(os.path.join(base_dir, '..', 'src', 'data'))
+    os.makedirs(json_dest_folder, exist_ok=True)
+    ingredientes_json = os.path.join(json_dest_folder, 'ingredientes_unificados.json')
+    recetas_json = os.path.join(json_dest_folder, 'recetas_unificadas.json')
+
+    if os.path.exists(ingredientes_csv):
+        csv_to_json(ingredientes_csv, ingredientes_json)
+    if os.path.exists(recetas_csv):
+        csv_to_json(recetas_csv, recetas_json)
