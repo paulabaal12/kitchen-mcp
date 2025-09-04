@@ -56,41 +56,72 @@ async function handleOption(option) {
     case '1':
       rl.question('Nombre del alimento: ', async (name) => {
         const result = await callMCP('getFoodByName', { name });
-        console.log('Resultado (MCP):');
-        console.log(result);
-        logInteraction(`MCP: getFoodByName ${name}`, result);
-        promptUser();
+          if (!result) {
+            console.log('No se encontró el alimento.');
+          } else {
+            console.log('Resultado (MCP):');
+            console.log(result);
+          }
+          logInteraction(`MCP: getFoodByName ${name}`, result);
+          promptUser();
       });
       break;
-    case '2':
+    case '2': {
       rl.question('Mínimo de proteína: ', (minProtein) => {
+        if (isNaN(parseFloat(minProtein))) {
+          console.log('Por favor ingresa un número válido para proteína.');
+          return promptUser();
+        }
         rl.question('Máximo de grasa: ', (maxFat) => {
+          if (isNaN(parseFloat(maxFat))) {
+            console.log('Por favor ingresa un número válido para grasa.');
+            return promptUser();
+          }
           rl.question('Máximo de calorías: ', async (maxCalories) => {
+            if (isNaN(parseFloat(maxCalories))) {
+              console.log('Por favor ingresa un número válido para calorías.');
+              return promptUser();
+            }
             const params = { minProtein, maxFat, maxCalories };
             const result = await callMCP('searchFoods', params);
-            console.log('Resultados (MCP):');
-            console.log(result);
+            if (!result || result.length === 0) {
+              console.log('No se encontraron alimentos con esos criterios.');
+            } else {
+              console.log('Resultados (MCP):');
+              console.log(result);
+            }
             logInteraction(`MCP: searchFoods minProtein=${minProtein}, maxFat=${maxFat}, maxCalories=${maxCalories}`, result);
             promptUser();
           });
         });
       });
+      return;
+    }
       break;
+
     case '3': {
       const result = await callMCP('getRecipeSuggestions');
-      console.log('Sugerencias de recetas (MCP):');
-      console.log(result);
+      if (!result || result.length === 0) {
+        console.log('No hay sugerencias de recetas disponibles.');
+      } else {
+        console.log('Sugerencias de recetas (MCP):');
+        console.log(result);
+      }
       logInteraction('MCP: getRecipeSuggestions', result);
       promptUser();
-      break;
+      return;
     }
     case '4': {
       const result = await callMCP('getIngredients');
-      console.log('Ingredientes únicos (MCP):');
-      console.log(result);
+      if (!result || result.length === 0) {
+        console.log('No hay ingredientes disponibles.');
+      } else {
+        console.log('Ingredientes únicos (MCP):');
+        console.log(result);
+      }
       logInteraction('MCP: getIngredients', result);
       promptUser();
-      break;
+      return;
     }
   case '5':
       if (fs.existsSync(LOG_FILE)) {
