@@ -30,9 +30,10 @@ function showMenu() {
   console.log('2. Buscar alimentos por proteína/grasa/calorías (MCP)');
   console.log('3. Sugerencias de recetas (MCP)');
   console.log('4. Listar ingredientes únicos (MCP)');
-  console.log('5. Ver log de interacciones');
-  console.log('6. Preguntar a Claude (Anthropic)');
-  console.log('7. Salir');
+  console.log('5. Buscar recetas por ingredientes (MCP)');
+  console.log('6. Ver log de interacciones');
+  console.log('7. Preguntar a Claude (Anthropic)');
+  console.log('8. Salir');
 }
 
 const MCP_URL = 'http://localhost:4000/jsonrpc';
@@ -126,7 +127,40 @@ async function handleOption(option) {
       promptUser();
       return;
     }
-  case '5':
+    case '5': {
+      rl.question('Ingresa los ingredientes separados por coma (ej: manzana, canela): ', async (input) => {
+        const ingredients = input.split(',').map(i => i.trim()).filter(Boolean);
+        if (ingredients.length === 0) {
+          console.log('Debes ingresar al menos un ingrediente.');
+          return promptUser();
+        }
+        const result = await callMCP('getRecipesByIngredients', { ingredients });
+        if (!result || result.length === 0) {
+          console.log('No se encontraron recetas con esos ingredientes.');
+        } else {
+          console.log('Recetas sugeridas:');
+          result.forEach((receta, idx) => {
+            // Calcular coincidencias
+            let recetaIngs = [];
+            if (Array.isArray(receta.ingredients)) {
+              recetaIngs = receta.ingredients;
+            } else if (typeof receta.ingredients === 'string') {
+              recetaIngs = receta.ingredients.split(',');
+            }
+            recetaIngs = recetaIngs.map(i => i.trim().toLowerCase());
+            const coincidencias = ingredients.filter(ing => recetaIngs.some(ring => ring.includes(ing.toLowerCase())));
+            console.log(`\n[${idx+1}] ${receta.name || receta.title || 'Receta sin nombre'}`);
+            console.log(`Coincidencias: ${coincidencias.length} (${coincidencias.join(', ')})`);
+            if (receta.ingredients) console.log('Ingredientes:', Array.isArray(receta.ingredients) ? receta.ingredients.join(', ') : receta.ingredients);
+            if (receta.instructions) console.log('Instrucciones:', receta.instructions);
+          });
+        }
+        logInteraction(`MCP: getRecipesByIngredients ${ingredients.join(', ')}`, result);
+        promptUser();
+      });
+      return;
+    }
+    case '6':
       if (fs.existsSync(LOG_FILE)) {
         const log = JSON.parse(fs.readFileSync(LOG_FILE));
         console.log('=== Log de interacciones ===');
@@ -139,6 +173,39 @@ async function handleOption(option) {
         console.log('No hay interacciones registradas.');
       }
       promptUser();
+      break;
+    case '7': {
+      async function converseWithClaude() {
+        rl.question("Pregunta para Claude (escribe 'salir' para volver al menú): ", async (question) => {
+          if (question.trim().toLowerCase() === 'salir' || question.trim().toLowerCase() === 'volver') {
+            promptUser();
+            return;
+          }
+          try {
+            claudeHistory.push({ role: 'user', content: question });
+            // Limitar historial a los últimos 10 mensajes
+            const historyToSend = claudeHistory.slice(-10);
+            const response = await anthropic.messages.create({
+              model: 'claude-3-haiku-20240307',
+              max_tokens: 200,
+              messages: historyToSend
+            });
+            const answer = response.content[0].text;
+            claudeHistory.push({ role: 'assistant', content: answer });
+            console.log('Claude:', answer);
+            logInteraction(`Claude: ${question}`, answer);
+          } catch (err) {
+            console.log('Error consultando a Claude:', err.message || err);
+          }
+          converseWithClaude();
+        });
+      }
+      converseWithClaude();
+      break;
+    }
+    case '8':
+      console.log('¡Hasta luego!');
+      rl.close();
       break;
     case '6': {
       async function converseWithClaude() {
