@@ -20,6 +20,7 @@
   "homepage": "https://github.com/paulabaal12/PROY1-REDES#readme",
   "dependencies": {
     "@anthropic-ai/sdk": "^0.60.0",
+    "@modelcontextprotocol/sdk": "^1.17.5",
     "anthropic": "^0.0.0",
     "axios": "^1.11.0",
     "body-parser": "^1.20.2",

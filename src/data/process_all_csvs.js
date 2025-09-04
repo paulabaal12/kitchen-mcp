@@ -4,7 +4,6 @@ const path = require('path');
 const csv = require('csv-parser');
 
 const csvDir = path.join(__dirname, '../data/CSV');
-const outputJson = path.join(__dirname, './data/combined_data.json');
 
 // Filtrar solo archivos .csv (no carpetas ni otros tipos)
 function getCsvFiles(dir) {
