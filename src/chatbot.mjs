@@ -51,6 +51,9 @@ async function callMCP(method, params = {}) {
   }
 }
 
+// Historial de mensajes para Claude (solo sesión actual)
+let claudeHistory = [];
+
 async function handleOption(option) {
   switch(option) {
     case '1':
@@ -137,25 +140,35 @@ async function handleOption(option) {
       }
       promptUser();
       break;
-  case '6':
-      rl.question('Pregunta para Claude: ', async (question) => {
-        try {
-          const response = await anthropic.messages.create({
-            model: 'claude-3-haiku-20240307',
-            max_tokens: 200,
-            messages: [
-              { role: 'user', content: question }
-            ]
-          });
-          const answer = response.content[0].text;
-          console.log('Claude:', answer);
-          logInteraction(`Claude: ${question}`, answer);
-        } catch (err) {
-          console.log('Error consultando a Claude:', err.message || err);
-        }
-        promptUser();
-      });
+    case '6': {
+      async function converseWithClaude() {
+        rl.question("Pregunta para Claude (escribe 'salir' para volver al menú): ", async (question) => {
+          if (question.trim().toLowerCase() === 'salir' || question.trim().toLowerCase() === 'volver') {
+            promptUser();
+            return;
+          }
+          try {
+            claudeHistory.push({ role: 'user', content: question });
+            // Limitar historial a los últimos 10 mensajes
+            const historyToSend = claudeHistory.slice(-10);
+            const response = await anthropic.messages.create({
+              model: 'claude-3-haiku-20240307',
+              max_tokens: 200,
+              messages: historyToSend
+            });
+            const answer = response.content[0].text;
+            claudeHistory.push({ role: 'assistant', content: answer });
+            console.log('Claude:', answer);
+            logInteraction(`Claude: ${question}`, answer);
+          } catch (err) {
+            console.log('Error consultando a Claude:', err.message || err);
+          }
+          converseWithClaude();
+        });
+      }
+      converseWithClaude();
       break;
+    }
     case '7':
       console.log('¡Hasta luego!');
       rl.close();
