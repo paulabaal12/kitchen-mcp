@@ -1,91 +1,122 @@
-# PROY1-REDES
+# Kitchen MCP Server
 
-## Project Overview
+A Model Context Protocol (MCP) server focused on food, nutrition, and recipe suggestions. This project allows you to query ingredients, get nutritional information, and receive recipe recommendations using the open MCP standard, making it compatible with Claude Desktop and other MCP clients.
 
-Food & Nutrition Chatbot with MCP integration. This project implements a console chatbot that connects to a local API and MCP server to provide food, nutrition, ingredient information, and recipe suggestions. It also integrates with Anthropic Claude for general questions.
+## Features
 
-### Features
-- Query foods and nutrition data from local CSVs (combined to JSON)
-- Suggest recipes based on protein/fat
-- List unique ingredients
-- Log all interactions
-- Connect to Anthropic Claude (LLM)
-- MCP server (JSON-RPC) for food/nutrition queries
+- Query foods and their nutritional information.
+- Search for foods by nutritional criteria (protein, fat, calories).
+- List available ingredients.
+- Get recipe suggestions based on nutrition.
+- Find recipes by ingredients.
+- All endpoints follow the MCP protocol and are compatible with Claude Desktop.
 
----
+## Project Structure
 
-## Folder Structure
+- `src/mcp-server.js`: Main MCP server implementation (Node.js).
+- `src/utils.js`: Utility functions (e.g., Levenshtein distance).
+- `data/`: Contains JSON and CSV files with food and recipe data.
 
-```
-PROY1-REDES/
-│
-├── src/
-│   ├── index.js                # API backend principal
-│   ├── foods_api.js            # Endpoints de alimentos, ingredientes, recetas
-│   ├── process_all_csvs.js     # Script para combinar CSVs en JSON
-│   ├── chatbot.mjs             # Chatbot en consola con Anthropic/Claude
-│   ├── mcp_server.js           # Servidor MCP local (JSON-RPC)
-│
-├── data/
-│   └── CSV/                    # CSVs originales (no rastreados por Git)
-│
-├── .gitignore                  # Ignorar archivos grandes, logs, JSON generados
-├── package.json                # Configuración de dependencias Node.js
-├── requirements.txt            # (si usas Python para algún script)
-├── README.md                   # Documentación principal
-```
+## Requirements
 
----
+- Node.js 18 or higher
+- npm
 
-## Usage Flow & Main Commands
+## Installation
 
-### 1. Combine CSVs to JSON
-```powershell
-node src/process_all_csvs.js
-```
-Generates a combined JSON from all CSVs in `data/CSV/`. (Not tracked by Git)
+1. Clone the repository:
+   ```bash
+   git clone https://github.com/paulabaal12/kitchen-mcp.git
+   cd kitchen-mcp
+   ```
 
-### 2. Start the API Backend
-```powershell
-node src/index.js
-```
-Runs the Express API on port 3001.
+2. Install dependencies:
+   ```bash
+   npm install
+   ```
 
-### 3. Start the MCP Server
-```powershell
-node src/mcp_server.js
-```
-Runs the MCP server (JSON-RPC) on port 4000.
+3. Make sure your data files (`ingredientes_unificados.json`, `recetas_unificadas.json`) are present in the `src/data/` directory.
 
-### 4. Run the Console Chatbot
-```powershell
-node src/chatbot.mjs
-```
-Interact with the chatbot, query foods, ingredients, recipes, and ask Claude.
+## Usage
 
----
+### Running the MCP Server
 
-## Deploying the MCP Server Remotely (Google Cloud Run)
+To start the server for use with Claude Desktop:
 
-You can deploy your MCP server to the cloud for remote access (required for the project).
-
-### 1. Prepare the files
-- Ensure you have `mcp_server.js`, `package.json`, `Dockerfile`, and your `data/ingredientes_unificados.json` and `data/recetas_unificadas.json` in the same folder.
-
-### 2. Deploy to Google Cloud Run
-- Follow the official [Cloud Run quickstart](https://cloud.google.com/run/docs/quickstarts/build-and-deploy) or use the [Anthropic MCP Cloud Run tutorial](https://cloud.google.com/blog/topics/developers-practitioners/build-and-deploy-a-remote-mcp-server-to-google-cloud-run-in-under-10-minutes).
-- The Dockerfile is already provided for you.
-- The default port for Cloud Run is 8080 (already set in your code).
-
-### 3. Example: Test your remote MCP server
-After deployment, your endpoint will look like:
-```
-POST https://<your-cloud-run-url>/jsonrpc
-Body: { "jsonrpc": "2.0", "method": "getIngredients", "params": {}, "id": 1 }
+```bash
+node src/mcp-server.js
 ```
 
-### 4. Integrate remote MCP in your chatbot
-- In your chatbot, add an option to query the remote MCP server by changing the URL to your Cloud Run endpoint.
-- Example scenario: Ask for the current time, a greeting, or any food/recipe info from the remote server.
+### Claude Desktop Configuration
 
----
+Add the following to your `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "kitchen": {
+      "command": "node",
+      "args": [
+        "D:/Documentos/GitHub/kitchen-mcp/src/mcp-server.js"
+      ],
+      "env": {
+        "NODE_ENV": "production"
+      }
+    }
+  }
+}
+```
+> Adjust the path if your project is in a different location.
+
+### Example: Get Recipes by Ingredients
+
+**Prompt in Claude Desktop:**
+```
+I want to cook something with apple, sugar and butter.
+```
+
+**Sample MCP Tool Call:**
+```json
+{
+  "method": "get_recipes_by_ingredients",
+  "params": {
+    "ingredients": ["apple", "sugar", "butter"]
+  }
+}
+```
+
+**Sample Response:**
+```json
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "[\n  {\n    \"name\": \"Fruit Galette\",\n    \"ingredients\": [\"apple\", \"sugar\", \"butter\", ...],\n    ...\n  },\n  ...\n]"
+    }
+  ]
+}
+```
+
+### Example Recipe: Creole Cream Cheesecake With Caramel-Apple Topping
+
+**Ingredients:**
+- Graham cracker crumbs, sugar, butter, cream cheese, eggs, apples, honey, cinnamon, cardamom, ginger, vanilla, lemon.
+
+**Preparation:**
+1. Prepare the crust and bake.
+2. Mix and bake the cheesecake filling.
+3. Make the caramel-apple topping in a pan.
+4. Chill the cheesecake, then top with apples before serving.
+
+**Approximate Calories:**  
+~7,700 calories for the whole cheesecake (about 480–640 per slice).
+
+## Project Goals
+
+- Implement a standards-based MCP server for food and nutrition.
+- Enable LLMs and agents to access real-time food and recipe data.
+- Demonstrate interoperability with Claude Desktop and other MCP clients.
+
+## License
+
+MIT
