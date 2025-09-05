@@ -30,14 +30,14 @@ async function processAllCSVs() {
     try {
       const data = await readCSV(filePath);
       combined[file] = data;
-      console.log(`Procesado: ${file} (${data.length} filas)`);
+  console.error(`Procesado: ${file} (${data.length} filas}`);
     } catch (err) {
       console.error(`Error procesando ${file}:`, err);
     }
   }
 
   fs.writeFileSync(outputJson, JSON.stringify(combined, null, 2));
-  console.log('combined_data.json generado con éxito.');
+  console.error('combined_data.json generado con éxito.');
 }
 
 processAllCSVs().catch(console.error);
