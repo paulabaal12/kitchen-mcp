@@ -1,4 +1,3 @@
-#!/usr/bin/env node
 const { Server } = require('@modelcontextprotocol/sdk/server/index.js');
 const { StdioServerTransport } = require('@modelcontextprotocol/sdk/server/stdio.js');
 const {
@@ -14,9 +13,11 @@ const { levenshtein } = require('./utils');
 const dataDir = path.join(__dirname, 'data');
 const ingredientesPath = path.join(dataDir, 'ingredientes_unificados.json');
 const recetasPath = path.join(dataDir, 'recetas_unificadas.json');
+const substitutionsPath = path.join(dataDir, 'ingredient_substitutions.json');
 
 let foods = [];
 let recetas = [];
+let substitutions = {};
 
 // Cargar los datos JSON
 function loadFoods() {
@@ -32,6 +33,13 @@ function loadFoods() {
       recetas = JSON.parse(fs.readFileSync(recetasPath, 'utf-8'));
     } catch (e) {
       console.error('Error loading recetas_unificadas.json:', e);
+    }
+  }
+  if (fs.existsSync(substitutionsPath)) {
+    try {
+      substitutions = JSON.parse(fs.readFileSync(substitutionsPath, 'utf-8'));
+    } catch (e) {
+      console.error('Error loading ingredient_substitutions.json:', e);
     }
   }
 }
@@ -59,6 +67,20 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         inputSchema: {
           type: 'object',
           properties: {},
+        },
+      },
+      {
+        name: 'suggest_ingredient_substitution',
+        description: 'Sugiere sustitutos para un ingrediente dado (por ejemplo, jugo de naranja).',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            ingredient: {
+              type: 'string',
+              description: 'Nombre del ingrediente a sustituir',
+            },
+          },
+          required: ['ingredient'],
         },
       },
       {
@@ -268,6 +290,65 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           ],
         };
 
+      case 'suggest_ingredient_substitution': {
+        // Buscar sustitutos para el ingrediente dado
+        if (!args.ingredient || typeof args.ingredient !== 'string') {
+          throw new McpError(ErrorCode.InvalidParams, 'Parámetro "ingredient" requerido (string)');
+        }
+        // Normalizar el nombre para buscar coincidencias cercanas
+        const input = args.ingredient.trim().toLowerCase();
+        let foundKey = null;
+        // 1. Coincidencia exacta
+        for (const key of Object.keys(substitutions)) {
+          if (key.toLowerCase() === input) {
+            foundKey = key;
+            break;
+          }
+        }
+        // 2. Coincidencia parcial (input incluido en la clave o viceversa)
+        if (!foundKey) {
+          for (const key of Object.keys(substitutions)) {
+            const keyNorm = key.toLowerCase();
+            if (keyNorm.includes(input) || input.includes(keyNorm)) {
+              foundKey = key;
+              break;
+            }
+          }
+        }
+        // 3. Coincidencia por similitud (levenshtein)
+        if (!foundKey) {
+          let minDist = 4;
+          for (const key of Object.keys(substitutions)) {
+            const dist = levenshtein(key.toLowerCase(), input);
+            if (dist < minDist) {
+              minDist = dist;
+              foundKey = key;
+            }
+          }
+        }
+        if (foundKey) {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: JSON.stringify({
+                  ingredient: foundKey,
+                  substitutions: substitutions[foundKey],
+                }, null, 2),
+              },
+            ],
+          };
+        } else {
+          return {
+            content: [
+              {
+                type: 'text',
+                text: 'No se encontraron sustitutos para el ingrediente solicitado.'
+              },
+            ],
+          };
+        }
+      }
       default:
         throw new McpError(ErrorCode.MethodNotFound, `Herramienta desconocida: ${name}`);
     }
