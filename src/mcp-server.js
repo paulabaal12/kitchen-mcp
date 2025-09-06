@@ -72,6 +72,28 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: [
       {
+        name: 'recommend_by_mood_and_season',
+        description: 'Recommends foods or recipes based on mood and optionally season (e.g., happy + summer).',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            mood: {
+              type: 'string',
+              description: 'Main mood (happy, excited, tender, scared, angry, sad)'
+            },
+            season: {
+              type: 'string',
+              description: 'Season (spring, summer, autumn, winter) (optional)'
+            },
+            type: {
+              type: 'string',
+              description: 'Type: "food" or "recipe" (optional, default: recipe)'
+            }
+          },
+          required: ['mood']
+        }
+      },
+      {
         name: 'suggest_utensils_for_recipe',
         description: 'Suggests necessary kitchen utensils for a given recipe (by name).',
         inputSchema: {
@@ -211,6 +233,29 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   try {
     switch (name) {
+      case 'recommend_by_mood_and_season': {
+        const { mood, season, type } = args;
+        if (!mood) {
+          throw new McpError(ErrorCode.InvalidParams, 'Parameter "mood" is required');
+        }
+        // Elegir fuente: recetas o foods
+        let items = [];
+        if (type === 'food') {
+          items = foods;
+        } else {
+          items = recetas.length > 0 ? recetas : foods;
+        }
+        const { getFoodOrRecipeByMoodAndSeason } = require('./utils');
+        const result = getFoodOrRecipeByMoodAndSeason(items, mood, season);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      }
       case 'suggest_utensils_for_recipe': {
         if (!args.recipe_name || typeof args.recipe_name !== 'string') {
           throw new McpError(ErrorCode.InvalidParams, 'Parámetro "recipe_name" requerido (string)');

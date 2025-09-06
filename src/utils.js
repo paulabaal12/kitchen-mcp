@@ -1,3 +1,108 @@
+/**
+ * Recommend foods or recipes based on mood and season.
+ * Busca coincidencias en nombre, tipo, categoría e ingredientes.
+ * @param {Object[]} items - Array of food or recipe objects (must have name/title and optionally type/category/ingredients).
+ * @param {string} mood - Main mood (happy, excited, tender, scared, angry, sad).
+ * @param {string} season - Season (spring, summer, autumn, winter).
+ * @returns {Object[]} - Array of recommended items.
+ */
+function getFoodOrRecipeByMoodAndSeason(items, mood, season) {
+  if (!Array.isArray(items) || !mood) return [];
+  const moodKey = mood.toLowerCase();
+  const moodData = MOOD_SEASON_FOOD_MAP.moods[moodKey];
+  let foodTypes = [];
+  if (!moodData) return [];
+  if (season) {
+    const seasonKey = season.toLowerCase();
+    const seasonData = MOOD_SEASON_FOOD_MAP.seasons[seasonKey];
+    if (seasonData) {
+      foodTypes = [...(moodData.foodTypes || []), ...(seasonData.foodExamples || [])];
+    } else {
+      foodTypes = moodData.foodTypes || [];
+    }
+  } else {
+    foodTypes = moodData.foodTypes || [];
+  }
+  const foodTypeSet = new Set(foodTypes);
+  // Buscar por nombre, tipo, categoría o ingredientes
+  const filtered = items.filter(item => {
+    const name = (item.name || item.title || '').toLowerCase();
+    const type = (item.type || item.category || '').toLowerCase();
+    const ingredients = Array.isArray(item.ingredients) ? item.ingredients.join(' ').toLowerCase() : (typeof item.ingredients === 'string' ? item.ingredients.toLowerCase() : '');
+    for (const ft of foodTypeSet) {
+      if (name.includes(ft) || type.includes(ft) || ingredients.includes(ft)) return true;
+    }
+    return false;
+  });
+  // Si no hay suficientes, devolver aleatorios del grupo
+  if (filtered.length < 3) {
+    // Buscar por palabras clave de emociones
+    const keywords = moodData.keywords || [];
+    const more = items.filter(item => {
+      const name = (item.name || item.title || '').toLowerCase();
+      return keywords.some(kw => name.includes(kw));
+    });
+    return [...filtered, ...more].slice(0, 5);
+  }
+  return filtered.slice(0, 5);
+}
+// Mood and season food mapping for recommendations
+const MOOD_SEASON_FOOD_MAP = {
+  moods: {
+    happy: {
+      keywords: ["fulfilled", "glad", "cheerful", "content", "satisfied", "optimistic", "peaceful", "hopeful"],
+      eatingTendency: "Eat with company, celebrate with food, enjoy without guilt",
+      foodTypes: ["desserts", "comfort food", "fresh foods", "festive meals"]
+    },
+    excited: {
+      keywords: ["ecstatic", "energetic", "aroused", "bouncy", "nervous", "perky", "antsy"],
+      eatingTendency: "More snacks and nibbling; high energy = more cravings",
+      foodTypes: ["fast food", "fries", "chocolates", "sweet/energy drinks"]
+    },
+    tender: {
+      keywords: ["intimate", "loving", "romantic", "thankful", "sympathetic", "warm", "soft"],
+      eatingTendency: "Eat with others, food that symbolizes affection",
+      foodTypes: ["chocolates", "wine", "homemade dishes", "shared desserts"]
+    },
+    scared: {
+      keywords: ["nervous", "anxious", "shaky", "insecure", "helpless", "fearful", "worried"],
+      eatingTendency: "Compulsive eating to calm anxiety; craving sweets/carbs",
+      foodTypes: ["bread", "cookies", "ice cream", "sweets", "pasta"]
+    },
+    angry: {
+      keywords: ["irritated", "resentful", "miffed", "upset", "mad", "furious", "raging"],
+      eatingTendency: "Two extremes: binge or loss of appetite; craving strong textures",
+      foodTypes: ["spicy food", "crunchy food (fries)", "meats", "alcohol"]
+    },
+    sad: {
+      keywords: ["down", "blue", "depressed", "lonely", "bored", "sleepy", "ashamed", "guilty", "heartbroken"],
+      eatingTendency: "More comfort food; emotional binge eating",
+      foodTypes: ["ice cream", "chocolate", "bread", "pasta", "hot soups"]
+    }
+  },
+  seasons: {
+    spring: {
+      frequentMoods: ["happy", "excited", "tender"],
+      eatingTendency: "More energy, fresh and light meals; desire to share and celebrate",
+      foodExamples: ["salads", "fresh fruits", "smoothies", "outdoor meals"]
+    },
+    summer: {
+      frequentMoods: ["excited", "happy", "tender"],
+      eatingTendency: "More social gatherings, craving cold and refreshing foods",
+      foodExamples: ["ice cream", "juices", "seafood", "BBQ", "cold salads", "watermelon"]
+    },
+    autumn: {
+      frequentMoods: ["scared", "tender", "sad"],
+      eatingTendency: "More melancholy and anxiety; seeking warm and comforting foods",
+      foodExamples: ["pumpkin", "spiced bread", "hot chocolate", "soups", "stews"]
+    },
+    winter: {
+      frequentMoods: ["sad", "angry", "scared"],
+      eatingTendency: "Increased sadness and loneliness; craving heavy, caloric comfort food",
+      foodExamples: ["stews", "bread", "pasta", "braised dishes", "holiday sweets", "greasy foods"]
+    }
+  }
+};
 function levenshtein(a, b) {
   a = a.normalize('NFD').replace(/[^\w\s]/gi, '').toLowerCase();
   b = b.normalize('NFD').replace(/[^\w\s]/gi, '').toLowerCase();
@@ -24,7 +129,7 @@ function levenshtein(a, b) {
   return matrix[b.length][a.length];
 }
 
-// Diccionario extendido de utensilios y palabras clave
+// utensilio
 const UTENSIL_KEYWORDS = {
     "bench scraper": ["bench scraper"],
     "biscuit cutters": ["biscuit cutter", "biscuit cutters"],
@@ -32,21 +137,21 @@ const UTENSIL_KEYWORDS = {
     "brush, pastry": ["pastry brush", "brush, pastry"],
     "brush, silicone": ["silicone brush", "brush, silicone"],
     "bundt pan": ["bundt pan"],
-    "cake pan": ["cake pan", "cake pan, 8-inch", "cake pan, 9-inch", "cake pan, 9x13-inch", "cake pan, square, 8-inch", "cake pan, tube pan", "angel food pan"],
+    "cake pan": ["cake pan", "cake pan, 8-inch", "cake pan", "cake pan", "tube pan", "angel food pan"],
     "cake stand": ["cake stand", "revolving cake stand"],
     "cutting board": ["cutting board", "tabla", "board", "chop board"],
     "disher set": ["disher set"],
     "docking tool": ["docking tool"],
-    "dutch oven": ["dutch oven", "dutch oven, 5+ quart"],
+    "dutch oven": ["dutch oven", "dutch oven"],
     "fine mesh strainer": ["fine mesh strainer", "strainer", "colador", "colander"],
     "flutted pastry wheel": ["flutted pastry wheel"],
     "grater": ["grater", "rallador", "grater, microplane", "microplane"],
     "hand mixer": ["hand mixer"],
     "kitchen scale": ["kitchen scale", "digital scale", "kitchen scale, digital"],
     "knife, bread": ["bread knife", "knife, bread", "serrated knife"],
-    "knife, chef's": ["chef's knife", "knife, chef's", "knife, chef's, 8-inch"],
+    "knife, chef's": ["chef's knife", "knife, chef's"],
     "knife, paring": ["paring knife", "knife, paring"],
-    "ladle": ["ladle", "ladle, 2-ounce", "ladle, 4-ounce", "ladle, 8-ounce"],
+    "ladle": ["ladle"],
     "loaf pan": ["loaf pan", "loaf pan, 1-pound", "loaf pan, 1.5-pound"],
     "measuring cups": ["measuring cup", "measuring cups, dry", "measuring cups, liquid", "taza medidora"],
     "measuring spoons": ["measuring spoon", "measuring spoons (set)", "measuring spoons"],
@@ -150,4 +255,4 @@ function getUtensilsForRecipe(recipeName) {
   ];
 }
 
-module.exports = { levenshtein, getUtensilsForRecipe, getUtensilsByKeywords };
+module.exports = { levenshtein, getUtensilsForRecipe, getUtensilsByKeywords, MOOD_SEASON_FOOD_MAP, getFoodOrRecipeByMoodAndSeason };
