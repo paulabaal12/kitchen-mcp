@@ -7,9 +7,14 @@ A Model Context Protocol (MCP) server focused on food, nutrition, and recipe sug
 - Query foods and their nutritional information.
 - Search for foods by nutritional criteria (protein, fat, calories).
 - List available ingredients.
+- Get all available recipes.
 - Get recipe suggestions based on nutrition.
 - Find recipes by ingredients.
-- All endpoints follow the MCP protocol and are compatible with Claude Desktop.
+- Suggest recipes by diet type (vegan, keto, etc.) and calories.
+- Suggest substitutes for a given ingredient.
+- Suggest necessary kitchen utensils for a recipe.
+- Recommend foods or recipes based on your mood and optionally the season.
+- All endpoints follow the MCP protocol and are compatible with Claude Desktop and other MCP clients.
 
 ## Project Structure
 
@@ -110,6 +115,85 @@ I want to cook something with apple, sugar and butter.
 
 **Approximate Calories:**  
 ~7,700 calories for the whole cheesecake (about 480–640 per slice).
+
+## MCP Tools (Endpoints)
+
+The following MCP tools are available:
+
+| Name                              | Description                                                                                 | Input Example |
+|------------------------------------|---------------------------------------------------------------------------------------------|--------------|
+| `get_foods`                       | Get all available foods.                                                                    | `{}`         |
+| `get_food_by_name`                | Find a specific food by name.                                                               | `{ "name": "apple" }` |
+| `search_foods`                    | Search foods by nutritional criteria (minProtein, maxFat, maxCalories).                     | `{ "minProtein": 5 }` |
+| `get_ingredients`                 | Get list of available ingredients.                                                          | `{}`         |
+| `get_recipe_suggestions`          | Get recipe suggestions based on nutritional content.                                        | `{}`         |
+| `get_recipes`                     | Get all available recipes.                                                                  | `{}`         |
+| `get_recipes_by_ingredients`      | Find recipes by specific ingredients.                                                       | `{ "ingredients": ["apple", "sugar"] }` |
+| `suggest_recipe_by_diet`          | Suggest recipes by diet type (vegan, keto, etc). Optionally filter by calories.             | `{ "diet": "vegan", "maxCalories": 500 }` |
+| `suggest_ingredient_substitution` | Suggest substitutes for a given ingredient (e.g., orange juice).                            | `{ "ingredient": "orange juice" }` |
+| `suggest_utensils_for_recipe`     | Suggest necessary kitchen utensils for a given recipe (by name).                            | `{ "recipe_name": "apple pie" }` |
+| `recommend_by_mood_and_season`    | Recommends foods or recipes based on mood and optionally season (e.g., happy + summer).      | `{ "mood": "happy" }` or `{ "mood": "sad", "season": "winter" }` |
+
+### Example: Recommend by Mood and Season
+
+**Prompt:**
+```
+I feel happy, what can I eat?
+```
+
+**Sample MCP Tool Call:**
+```json
+{
+  "method": "recommend_by_mood_and_season",
+  "params": {
+    "mood": "happy"
+  }
+}
+```
+
+**Sample Response:**
+```json
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "[\n  {\"name\": \"Fruit Salad\", ...}, ...]"
+    }
+  ]
+}
+```
+
+- If you add a `season` (e.g., `"season": "autumn"`), the recommendations will also consider seasonal foods.
+- You can set `type` to `food` or `recipe` (default is recipe).
+
+### Example: Suggest Utensils for a Recipe
+
+**Prompt:**
+```
+What utensils do I need for lasagna?
+```
+
+**Sample MCP Tool Call:**
+```json
+{
+  "method": "suggest_utensils_for_recipe",
+  "params": {
+    "recipe_name": "lasagna"
+  }
+}
+```
+
+**Sample Response:**
+```json
+{
+  "content": [
+    {
+      "type": "text",
+      "text": "{\n  \"recipe\": \"lasagna\",\n  \"utensils\": [\"pan\", \"pot\", ...]\n}"
+    }
+  ]
+}
+```
 
 ## Project Goals
 
