@@ -1,4 +1,9 @@
-# Kitchen MCP Server
+
+# 🥗 Kitchen MCP Server
+
+<div align="center">
+<b>Model Context Protocol server for food, nutrition, and smart recipe recommendations</b>
+</div>
 
 A Model Context Protocol (MCP) server focused on food, nutrition, and recipe suggestions. This project allows you to query ingredients, get nutritional information, and receive recipe recommendations using the open MCP standard, making it compatible with Claude Desktop and other MCP clients.
 
@@ -120,19 +125,19 @@ I want to cook something with apple, sugar and butter.
 
 The following MCP tools are available:
 
-| Name                              | Description                                                                                 | Input Example |
-|------------------------------------|---------------------------------------------------------------------------------------------|--------------|
-| `get_foods`                       | Get all available foods.                                                                    | `{}`         |
-| `get_food_by_name`                | Find a specific food by name.                                                               | `{ "name": "apple" }` |
-| `search_foods`                    | Search foods by nutritional criteria (minProtein, maxFat, maxCalories).                     | `{ "minProtein": 5 }` |
-| `get_ingredients`                 | Get list of available ingredients.                                                          | `{}`         |
-| `get_recipe_suggestions`          | Get recipe suggestions based on nutritional content.                                        | `{}`         |
-| `get_recipes`                     | Get all available recipes.                                                                  | `{}`         |
-| `get_recipes_by_ingredients`      | Find recipes by specific ingredients.                                                       | `{ "ingredients": ["apple", "sugar"] }` |
-| `suggest_recipe_by_diet`          | Suggest recipes by diet type (vegan, keto, etc). Optionally filter by calories.             | `{ "diet": "vegan", "maxCalories": 500 }` |
-| `suggest_ingredient_substitution` | Suggest substitutes for a given ingredient (e.g., orange juice).                            | `{ "ingredient": "orange juice" }` |
-| `suggest_utensils_for_recipe`     | Suggest necessary kitchen utensils for a given recipe (by name).                            | `{ "recipe_name": "apple pie" }` |
-| `recommend_by_mood_and_season`    | Recommends foods or recipes based on mood and optionally season (e.g., happy + summer).      | `{ "mood": "happy" }` or `{ "mood": "sad", "season": "winter" }` |
+| Name                              | Description                                                                                 |
+|------------------------------------|---------------------------------------------------------------------------------------------|
+| `get_foods`                       | Get all available foods.                                                                    |
+| `get_food_by_name`                | Find a specific food by name.                                                               |
+| `search_foods`                    | Search foods by nutritional criteria (minProtein, maxFat, maxCalories).                     |
+| `get_ingredients`                 | Get list of available ingredients.                                                          |
+| `get_recipe_suggestions`          | Get recipe suggestions based on nutritional content.                                        |
+| `get_recipes`                     | Get all available recipes.                                                                  |
+| `get_recipes_by_ingredients`      | Find recipes by specific ingredients.                                                       |
+| `suggest_recipe_by_diet`          | Suggest recipes by diet type (vegan, keto, etc). Optionally filter by calories.             |
+| `suggest_ingredient_substitution` | Suggest substitutes for a given ingredient (e.g., orange juice).                            |
+| `suggest_utensils_for_recipe`     | Suggest necessary kitchen utensils for a given recipe (by name).                            |
+| `recommend_by_mood_and_season`    | Recommends foods or recipes based on mood and optionally season (e.g., happy + summer).      |
 
 ### Example: Recommend by Mood and Season
 
@@ -195,12 +200,28 @@ What utensils do I need for lasagna?
 }
 ```
 
-## Project Goals
+## Visual Examples with Claude Desktop
 
-- Implement a standards-based MCP server for food and nutrition.
-- Enable LLMs and agents to access real-time food and recipe data.
-- Demonstrate interoperability with Claude Desktop and other MCP clients.
+### Example: Recipe search by ingredients or diet
 
-## License
+![alt text](image-1.png)
+*Recipe search using ingredients in Claude Desktop.*
 
-MIT
+---
+
+### Example: Recommendation by mood
+
+![alt text](image.png)
+*Food recommendation based on mood in Claude Desktop.*
+
+---
+
+### Example: Utensil suggestion
+![alt text](image-2.png)
+*Automatic utensil suggestion for a recipe in Claude Desktop.*
+
+---
+### Example: Ingredient substitution
+
+![alt text](image-3.png)
+*Ingredient substitution suggestion in Claude Desktop*
