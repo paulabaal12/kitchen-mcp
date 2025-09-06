@@ -10,17 +10,27 @@ const fs = require('fs');
 const path = require('path');
 const { levenshtein } = require('./utils');
 
+
 const dataDir = path.join(__dirname, 'data');
 const ingredientesPath = path.join(dataDir, 'ingredientes_unificados.json');
 const recetasPath = path.join(dataDir, 'recetas_unificadas.json');
 const substitutionsPath = path.join(dataDir, 'ingredient_substitutions.json');
+const allDietsPath = path.join(dataDir, 'All_Diets.json');
 
+let allDiets = [];
 let foods = [];
 let recetas = [];
 let substitutions = {};
 
 // Cargar los datos JSON
 function loadFoods() {
+  if (fs.existsSync(allDietsPath)) {
+    try {
+      allDiets = JSON.parse(fs.readFileSync(allDietsPath, 'utf-8'));
+    } catch (e) {
+      console.error('Error loading All_Diets.json:', e);
+    }
+  }
   if (fs.existsSync(ingredientesPath)) {
     try {
       foods = JSON.parse(fs.readFileSync(ingredientesPath, 'utf-8'));
@@ -67,6 +77,24 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
         inputSchema: {
           type: 'object',
           properties: {},
+        },
+      },
+      {
+        name: 'suggest_recipe_by_diet',
+        description: 'Sugiere recetas según tipo de dieta (ejemplo: vegana, keto, mediterránea, paleo, dash).',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            diet: {
+              type: 'string',
+              description: 'Tipo de dieta: vegan, keto, mediterranean, paleo, dash',
+            },
+            maxCalories: {
+              type: 'number',
+              description: 'Calorías máximas (opcional)',
+            },
+          },
+          required: ['diet'],
         },
       },
       {
@@ -169,6 +197,53 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   try {
     switch (name) {
+      case 'suggest_recipe_by_diet': {
+        // diet: vegan, keto, mediterranean, paleo, dash
+        if (!args.diet || typeof args.diet !== 'string') {
+          throw new McpError(ErrorCode.InvalidParams, 'Parámetro "diet" requerido (string)');
+        }
+        const dietMap = {
+          vegan: 'vegan',
+          keto: 'keto',
+          mediterranean: 'mediterranean',
+          paleo: 'paleo',
+          dash: 'dash',
+        };
+        // Permitir variantes en minúsculas y acentos
+        const inputDiet = args.diet.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        let mappedDiet = null;
+        for (const key in dietMap) {
+          if (inputDiet.includes(key)) {
+            mappedDiet = dietMap[key];
+            break;
+          }
+        }
+        if (!mappedDiet) {
+          return {
+            content: [{ type: 'text', text: 'No se reconoce el tipo de dieta solicitado.' }],
+          };
+        }
+        let filtered = allDiets.filter(r => r.Diet_type && r.Diet_type.toLowerCase() === mappedDiet);
+        if (args.maxCalories) {
+          filtered = filtered.filter(r => parseFloat(r['Carbs(g)'] || 0) + parseFloat(r['Fat(g)'] || 0) + parseFloat(r['Protein(g)'] || 0) <= args.maxCalories);
+        }
+        // Si no hay resultados, devolver mensaje
+        if (!filtered.length) {
+          return {
+            content: [{ type: 'text', text: 'No se encontraron recetas para esa dieta.' }],
+          };
+        }
+        // Devolver hasta 5 recetas
+        const result = filtered.slice(0, 5);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify(result, null, 2),
+            },
+          ],
+        };
+      }
       case 'get_foods':
         return {
           content: [
