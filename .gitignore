@@ -8,4 +8,4 @@ node_modules/
 src/data/combined_data.json
 *.log
 src/chatbot_log.json
-src/xd.txt
+src/xxd.txt

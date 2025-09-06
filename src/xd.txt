@@ -1,3 +1,0 @@
-PS D:\Documentos\GitHub\PROY1-REDES> Stop-Process -Id (Get-NetTCPConnection -LocalPort 4000).OwningProcess -Force
-PS D:\Documentos\GitHub\PROY1-REDES> netstat -ano | findstr :4000
-PS D:\Documentos\GitHub\PROY1-REDES> netstat -ano | findstr :4000
