@@ -8,7 +8,7 @@ const {
 } = require('@modelcontextprotocol/sdk/types.js');
 const fs = require('fs');
 const path = require('path');
-const { levenshtein } = require('./utils');
+const { levenshtein, getUtensilsForRecipe } = require('./utils');
 
 
 const dataDir = path.join(__dirname, 'data');
@@ -72,8 +72,22 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
   return {
     tools: [
       {
+        name: 'suggest_utensils_for_recipe',
+        description: 'Suggests necessary kitchen utensils for a given recipe (by name).',
+        inputSchema: {
+          type: 'object',
+          properties: {
+            recipe_name: {
+              type: 'string',
+              description: 'Name of the recipe or dish',
+            },
+          },
+          required: ['recipe_name'],
+        },
+      },
+      {
         name: 'get_foods',
-        description: 'Obtener todos los alimentos disponibles',
+        description: 'Get all available foods',
         inputSchema: {
           type: 'object',
           properties: {},
@@ -81,17 +95,17 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: 'suggest_recipe_by_diet',
-        description: 'Sugiere recetas según tipo de dieta (ejemplo: vegana, keto, mediterránea, paleo, dash).',
+        description: 'Suggests recipes by diet type (e.g., vegan, keto, Mediterranean, paleo, DASH).',
         inputSchema: {
           type: 'object',
           properties: {
             diet: {
               type: 'string',
-              description: 'Tipo de dieta: vegan, keto, mediterranean, paleo, dash',
+              description: 'Diet type: vegan, keto, Mediterranean, paleo, DASH',
             },
             maxCalories: {
               type: 'number',
-              description: 'Calorías máximas (opcional)',
+              description: 'Maximum calories (optional)',
             },
           },
           required: ['diet'],
@@ -99,13 +113,13 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: 'suggest_ingredient_substitution',
-        description: 'Sugiere sustitutos para un ingrediente dado (por ejemplo, jugo de naranja).',
+        description: 'Suggests substitutes for a given ingredient (e.g., orange juice).',
         inputSchema: {
           type: 'object',
           properties: {
             ingredient: {
               type: 'string',
-              description: 'Nombre del ingrediente a sustituir',
+              description: 'Name of the ingredient to substitute',
             },
           },
           required: ['ingredient'],
@@ -113,13 +127,13 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: 'get_food_by_name',
-        description: 'Buscar un alimento específico por nombre',
+        description: 'Find a specific food by name',
         inputSchema: {
           type: 'object',
           properties: {
             name: {
               type: 'string',
-              description: 'Nombre del alimento a buscar',
+              description: 'Name of the food to search for',
             },
           },
           required: ['name'],
@@ -127,28 +141,28 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: 'search_foods',
-        description: 'Buscar alimentos por criterios nutricionales',
+        description: 'Search foods by nutritional criteria',
         inputSchema: {
           type: 'object',
           properties: {
             minProtein: {
               type: 'number',
-              description: 'Proteína mínima en gramos',
+              description: 'Minimum protein in grams',
             },
             maxFat: {
               type: 'number',
-              description: 'Grasa máxima en gramos',
+              description: 'Maximum fat in grams',
             },
             maxCalories: {
               type: 'number',
-              description: 'Calorías máximas',
+              description: 'Maximum calories',
             },
           },
         },
       },
       {
         name: 'get_ingredients',
-        description: 'Obtener lista de ingredientes disponibles',
+        description: 'Get list of available ingredients',
         inputSchema: {
           type: 'object',
           properties: {},
@@ -156,7 +170,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: 'get_recipe_suggestions',
-        description: 'Obtener sugerencias de recetas basadas en contenido nutricional',
+        description: 'Get recipe suggestions based on nutritional content',
         inputSchema: {
           type: 'object',
           properties: {},
@@ -164,7 +178,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: 'get_recipes',
-        description: 'Obtener todas las recetas disponibles',
+        description: 'Get all available recipes',
         inputSchema: {
           type: 'object',
           properties: {},
@@ -172,7 +186,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
       },
       {
         name: 'get_recipes_by_ingredients',
-        description: 'Buscar recetas por ingredientes específicos',
+        description: 'Find recipes by specific ingredients',
         inputSchema: {
           type: 'object',
           properties: {
@@ -181,7 +195,7 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
               items: {
                 type: 'string',
               },
-              description: 'Lista de ingredientes a buscar',
+              description: 'List of ingredients to search for',
             },
           },
           required: ['ingredients'],
@@ -197,6 +211,23 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
   try {
     switch (name) {
+      case 'suggest_utensils_for_recipe': {
+        if (!args.recipe_name || typeof args.recipe_name !== 'string') {
+          throw new McpError(ErrorCode.InvalidParams, 'Parámetro "recipe_name" requerido (string)');
+        }
+        const utensils = getUtensilsForRecipe(args.recipe_name);
+        return {
+          content: [
+            {
+              type: 'text',
+              text: JSON.stringify({
+                recipe: args.recipe_name,
+                utensils
+              }, null, 2),
+            },
+          ],
+        };
+      }
       case 'suggest_recipe_by_diet': {
         // diet: vegan, keto, mediterranean, paleo, dash
         if (!args.diet || typeof args.diet !== 'string') {
