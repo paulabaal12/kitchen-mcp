@@ -230,11 +230,22 @@ server.setRequestHandler(ListToolsRequestSchema, async () => {
 // Implementar manejadores de herramientas
 server.setRequestHandler(CallToolRequestSchema, async (request) => {
   const { name, arguments: args } = request.params;
+  // Permitir ambos formatos: directo y tools/call
+  let toolName, toolArgs;
+  if (request.params && request.params.name && request.params.arguments) {
+    // Formato genérico: { method: "tools/call", params: { name, arguments } }
+    toolName = request.params.name;
+    toolArgs = request.params.arguments;
+  } else {
+    // Formato directo: { method: "tool_name", params: { ... } }
+    toolName = request.method;
+    toolArgs = request.params;
+  }
 
   try {
-    switch (name) {
+    switch (toolName) {
       case 'recommend_by_mood_and_season': {
-        const { mood, season, type } = args;
+        const { mood, season, type } = toolArgs;
         if (!mood) {
           throw new McpError(ErrorCode.InvalidParams, 'Parameter "mood" is required');
         }
@@ -257,10 +268,10 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         };
       }
       case 'suggest_utensils_for_recipe': {
-        if (!args.recipe_name || typeof args.recipe_name !== 'string') {
+        if (!toolArgs.recipe_name || typeof toolArgs.recipe_name !== 'string') {
           throw new McpError(ErrorCode.InvalidParams, 'Parámetro "recipe_name" requerido (string)');
         }
-        const utensils = getUtensilsForRecipe(args.recipe_name);
+        const utensils = getUtensilsForRecipe(toolArgs.recipe_name);
         return {
           content: [
             {
@@ -275,7 +286,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
       }
       case 'suggest_recipe_by_diet': {
         // diet: vegan, keto, mediterranean, paleo, dash
-        if (!args.diet || typeof args.diet !== 'string') {
+        if (!toolArgs.diet || typeof toolArgs.diet !== 'string') {
           throw new McpError(ErrorCode.InvalidParams, 'Parámetro "diet" requerido (string)');
         }
         const dietMap = {
@@ -286,7 +297,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           dash: 'dash',
         };
         // Permitir variantes en minúsculas y acentos
-        const inputDiet = args.diet.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+        const inputDiet = toolArgs.diet.trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
         let mappedDiet = null;
         for (const key in dietMap) {
           if (inputDiet.includes(key)) {
@@ -300,8 +311,8 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
           };
         }
         let filtered = allDiets.filter(r => r.Diet_type && r.Diet_type.toLowerCase() === mappedDiet);
-        if (args.maxCalories) {
-          filtered = filtered.filter(r => parseFloat(r['Carbs(g)'] || 0) + parseFloat(r['Fat(g)'] || 0) + parseFloat(r['Protein(g)'] || 0) <= args.maxCalories);
+        if (toolArgs.maxCalories) {
+          filtered = filtered.filter(r => parseFloat(r['Carbs(g)'] || 0) + parseFloat(r['Fat(g)'] || 0) + parseFloat(r['Protein(g)'] || 0) <= toolArgs.maxCalories);
         }
         // Si no hay resultados, devolver mensaje
         if (!filtered.length) {
@@ -332,7 +343,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case 'get_food_by_name':
         const food = foods.find(f => 
-          f.food && f.food.toLowerCase() === args.name.toLowerCase()
+          f.food && f.food.toLowerCase() === toolArgs.name.toLowerCase()
         ) || null;
         return {
           content: [
@@ -398,11 +409,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         };
 
       case 'get_recipes_by_ingredients':
-        if (!args.ingredients || !Array.isArray(args.ingredients)) {
+        if (!toolArgs.ingredients || !Array.isArray(toolArgs.ingredients)) {
           throw new McpError(ErrorCode.InvalidParams, 'Parámetro "ingredients" requerido (array de strings)');
         }
 
-        const searchIngredients = args.ingredients.map(i =>
+        const searchIngredients = toolArgs.ingredients.map(i =>
           i.trim().toLowerCase().normalize('NFD').replace(/[^\w\s]/gi, '')
         );
 
@@ -443,11 +454,11 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
 
       case 'suggest_ingredient_substitution': {
         // Buscar sustitutos para el ingrediente dado
-        if (!args.ingredient || typeof args.ingredient !== 'string') {
+        if (!toolArgs.ingredient || typeof toolArgs.ingredient !== 'string') {
           throw new McpError(ErrorCode.InvalidParams, 'Parámetro "ingredient" requerido (string)');
         }
         // Normalizar el nombre para buscar coincidencias cercanas
-        const input = args.ingredient.trim().toLowerCase();
+        const input = toolArgs.ingredient.trim().toLowerCase();
         let foundKey = null;
         // 1. Coincidencia exacta
         for (const key of Object.keys(substitutions)) {
@@ -501,7 +512,7 @@ server.setRequestHandler(CallToolRequestSchema, async (request) => {
         }
       }
       default:
-        throw new McpError(ErrorCode.MethodNotFound, `Herramienta desconocida: ${name}`);
+        throw new McpError(ErrorCode.MethodNotFound, `Herramienta desconocida: ${toolName}`);
     }
   } catch (error) {
     if (error instanceof McpError) {
