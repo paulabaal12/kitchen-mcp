@@ -78,6 +78,7 @@ Add the following to your `claude_desktop_config.json`:
 ```
 > Adjust the path if your project is in a different location.
 
+
 ### Example: Get Recipes by Ingredients
 
 **Prompt in Claude Desktop:**
@@ -85,12 +86,25 @@ Add the following to your `claude_desktop_config.json`:
 I want to cook something with apple, sugar and butter.
 ```
 
-**Sample MCP Tool Call:**
+**Sample MCP Tool Call (Direct Format):**
 ```json
 {
   "method": "get_recipes_by_ingredients",
   "params": {
     "ingredients": ["apple", "sugar", "butter"]
+  }
+}
+```
+
+**Sample MCP Tool Call (Generic Format):**
+```json
+{
+  "method": "tools/call",
+  "params": {
+    "name": "get_recipes_by_ingredients",
+    "arguments": {
+      "ingredients": ["apple", "sugar", "butter"]
+    }
   }
 }
 ```
@@ -146,12 +160,25 @@ The following MCP tools are available:
 I feel happy, what can I eat?
 ```
 
-**Sample MCP Tool Call:**
+**Sample MCP Tool Call (Direct Format):**
 ```json
 {
   "method": "recommend_by_mood_and_season",
   "params": {
     "mood": "happy"
+  }
+}
+```
+
+**Sample MCP Tool Call (Generic Format):**
+```json
+{
+  "method": "tools/call",
+  "params": {
+    "name": "recommend_by_mood_and_season",
+    "arguments": {
+      "mood": "happy"
+    }
   }
 }
 ```
@@ -178,12 +205,25 @@ I feel happy, what can I eat?
 What utensils do I need for lasagna?
 ```
 
-**Sample MCP Tool Call:**
+**Sample MCP Tool Call (Direct Format):**
 ```json
 {
   "method": "suggest_utensils_for_recipe",
   "params": {
     "recipe_name": "lasagna"
+  }
+}
+```
+
+**Sample MCP Tool Call (Generic Format):**
+```json
+{
+  "method": "tools/call",
+  "params": {
+    "name": "suggest_utensils_for_recipe",
+    "arguments": {
+      "recipe_name": "lasagna"
+    }
   }
 }
 ```
